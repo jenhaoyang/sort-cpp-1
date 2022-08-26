@@ -9,6 +9,7 @@ https://github.com/saebyn/munkres-cpp
 - Docker 18.09.4
 - OpenCV 3.4.2
 - Boost 1.58.0
+- Eigen 3.3.7
 
 > All of the 3rd party libraries are included in the provided docker image
 
@@ -29,7 +30,7 @@ https://github.com/saebyn/munkres-cpp
 
 To run the tracker with the provided detections and visualize the results:
 
-1. Download the [2D MOT 2015 benchmark dataset](https://motchallenge.net/data/2D_MOT_2015/#download)
+1. Download the [2D MOT 2015 benchmark dataset](https://motchallenge.net/data/MOT15/)
 2. Create a symbolic link to the dataset
     ```bash
     $ ln -s /path/to/MOT2015_challenge/data/2DMOT2015 /path/to/sort-cpp/mot_benchmark
