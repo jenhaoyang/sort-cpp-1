@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.19.1)
+cmake_minimum_required(VERSION 3.16.1)
 project(sort-cpp)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
@@ -26,14 +26,43 @@ else ()
     message(FATAL_ERROR "Could not locate Boost")
 endif()
 
-include_directories(${PROJECT_SOURCE_DIR}/include)
+find_package (Python3 COMPONENTS Interpreter Development REQUIRED)
+if(Python3_FOUND)
+    message(STATUS "Python3 library status:")
+    message(STATUS "    version: ${Python3_VERSION}")
+    message(STATUS "    include path: ${Python3_INCLUDE_DIRS}")
+    include_directories(${Python3_INCLUDE_DIRS})
+else ()
+    message(FATAL_ERROR "Could not locate Python3")
+endif()
+
+include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/pybind11/include)
+
+# print include dir
+get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+foreach(dir ${dirs})
+  message(STATUS "dir='${dir}'")
+endforeach()
 
 file(GLOB SOURCE_FILES src/*.cpp)
 
-add_executable(${CMAKE_PROJECT_NAME} ${SOURCE_FILES})
+if(SKBUILD)
+  # Scikit-Build does not add your site-packages to the search path
+  # automatically, so we need to add it _or_ the pybind11 specific directory
+  # here.
+  execute_process(
+    COMMAND "${PYTHON_EXECUTABLE}" -c
+            "import pybind11; print(pybind11.get_cmake_dir())"
+    OUTPUT_VARIABLE _tmp_dir
+    OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ECHO STDOUT)
+  list(APPEND CMAKE_PREFIX_PATH "${_tmp_dir}")
+endif()
 
-target_link_libraries (
-        ${CMAKE_PROJECT_NAME}
-        ${OpenCV_LIBS}
-        ${Boost_LIBRARIES}
-)
+# Now we can find pybind11
+find_package(pybind11 CONFIG REQUIRED)
+
+pybind11_add_module(_core MODULE src/main.cpp)
+
+target_compile_definitions(_core PRIVATE VERSION_INFO=${PROJECT_VERSION})
+
+install(TARGETS _core DESTINATION .)

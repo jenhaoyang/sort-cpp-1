@@ -18,241 +18,280 @@
 #include "tracker.h"
 #include "utils.h"
 
+#include <pybind11/pybind11.h>
 
-std::vector<std::vector<cv::Rect>> ProcessLabel(std::ifstream& label_file) {
-    // Process labels - group bounding boxes by frame index
-    std::vector<std::vector<cv::Rect>> bbox;
-    std::vector<cv::Rect> bbox_per_frame;
-    // Label index starts from 1
-    int current_frame_index = 1;
-    std::string line;
+#define STRINGIFY(x) #x
+#define MACRO_STRINGIFY(x) STRINGIFY(x)
 
-    while (std::getline(label_file, line)) {
-        std::stringstream ss(line);
-        // Label format <frame>, <id>, <bb_left>, <bb_top>, <bb_width>, <bb_height>, <conf>, <x>, <y>, <z>
-        std::vector<float> label;
-        std::string data;
-        while (getline(ss , data, ',')) {
-            label.push_back(std::stof(data));
-        }
+int add(int i, int j) {
+    return i + j;
+}
 
-        if (static_cast<int>(label[0]) != current_frame_index) {
-            current_frame_index = static_cast<int>(label[0]);
-            bbox.push_back(bbox_per_frame);
-            bbox_per_frame.clear();
-        }
+namespace py = pybind11;
 
-        // Ignore low confidence detections
-        if (label[6] > kMinConfidence) {
-            bbox_per_frame.emplace_back(label[2], label[3], label[4], label[5]);
-        }
-    }
-    // Add bounding boxes from last frame
-    bbox.push_back(bbox_per_frame);
-    return bbox;
+PYBIND11_MODULE(_core, m) {
+    m.doc() = R"pbdoc(
+        Pybind11 example plugin
+        -----------------------
+        .. currentmodule:: scikit_build_example
+        .. autosummary::
+           :toctree: _generate
+           add
+           subtract
+    )pbdoc";
+
+    m.def("add", &add, R"pbdoc(
+        Add two numbers
+        Some other explanation about the add function.
+    )pbdoc");
+
+    m.def("subtract", [](int i, int j) { return i - j; }, R"pbdoc(
+        Subtract two numbers
+        Some other explanation about the subtract function.
+    )pbdoc");
+
+#ifdef VERSION_INFO
+    m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
+#else
+    m.attr("__version__") = "dev";
+#endif
 }
 
 
-int main(int argc, const char *argv[]) {
-    // parse program input arguments
-    boost::program_options::options_description desc{"Options"};
-    desc.add_options()
-            ("help,h", "Help screen")
-            ("display,d", "Display online tracker output (slow) [False]");
+// std::vector<std::vector<cv::Rect>> ProcessLabel(std::ifstream& label_file) {
+//     // Process labels - group bounding boxes by frame index
+//     std::vector<std::vector<cv::Rect>> bbox;
+//     std::vector<cv::Rect> bbox_per_frame;
+//     // Label index starts from 1
+//     int current_frame_index = 1;
+//     std::string line;
 
-    boost::program_options::variables_map vm;
-    boost::program_options::store(parse_command_line(argc, argv, desc), vm);
-    boost::program_options::notify(vm);
+//     while (std::getline(label_file, line)) {
+//         std::stringstream ss(line);
+//         // Label format <frame>, <id>, <bb_left>, <bb_top>, <bb_width>, <bb_height>, <conf>, <x>, <y>, <z>
+//         std::vector<float> label;
+//         std::string data;
+//         while (getline(ss , data, ',')) {
+//             label.push_back(std::stof(data));
+//         }
 
-    if (vm.count("help")) {
-        std::cout << desc << '\n';
-        return -1;
-    }
+//         if (static_cast<int>(label[0]) != current_frame_index) {
+//             current_frame_index = static_cast<int>(label[0]);
+//             bbox.push_back(bbox_per_frame);
+//             bbox_per_frame.clear();
+//         }
 
-    bool enable_display_flag = false;
-    if (vm.count("display")) {
-        enable_display_flag = true;
-    }
+//         // Ignore low confidence detections
+//         if (label[6] > kMinConfidence) {
+//             bbox_per_frame.emplace_back(label[2], label[3], label[4], label[5]);
+//         }
+//     }
+//     // Add bounding boxes from last frame
+//     bbox.push_back(bbox_per_frame);
+//     return bbox;
+// }
 
-    std::vector<cv::Scalar> colors;
-    if (enable_display_flag) {
-        // Create a window to display original image
-        cv::namedWindow("Original", cv::WINDOW_AUTOSIZE);
-        // Create a window to display tracking result
-        cv::namedWindow("Tracking", cv::WINDOW_AUTOSIZE);
 
-        // Generate random colors to visualize different bbox
-        std::random_device rd;  //Will be used to obtain a seed for the random number engine
-        std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-        constexpr int max_random_value = 20;
-        std::uniform_int_distribution<> dis(0, max_random_value);
-        constexpr int factor = 255 / max_random_value;
+// int main(int argc, const char *argv[]) {
+//     // parse program input arguments
+//     boost::program_options::options_description desc{"Options"};
+//     desc.add_options()
+//             ("help,h", "Help screen")
+//             ("display,d", "Display online tracker output (slow) [False]");
 
-        for (int n = 0; n < kNumColors; ++n) {
-            //Use dis to transform the random unsigned int generated by gen into an int in [0, 7]
-            colors.emplace_back(cv::Scalar(dis(gen) * factor, dis(gen) * factor, dis(gen) * factor));
-        }
-    }
+//     boost::program_options::variables_map vm;
+//     boost::program_options::store(parse_command_line(argc, argv, desc), vm);
+//     boost::program_options::notify(vm);
 
-    // All training dataset in MOT15
-    std::vector<std::string> dataset_names{"ADL-Rundle-6", "ADL-Rundle-8", "ETH-Bahnhof",
-                                           "ETH-Pedcross2", "ETH-Sunnyday", "KITTI-13",
-                                           "KITTI-17", "PETS09-S2L1", "TUD-Campus",
-                                           "TUD-Stadtmitte", "Venice-2"};
+//     if (vm.count("help")) {
+//         std::cout << desc << '\n';
+//         return -1;
+//     }
 
-    // create SORT tracker
-    Tracker tracker;
+//     bool enable_display_flag = false;
+//     if (vm.count("display")) {
+//         enable_display_flag = true;
+//     }
 
-    for (const auto& dataset_name : dataset_names) {
-        // Open label file and load detections from MOT dataset
-        // Note that it can also be replaced by detections from you own detector
-        std::string label_path = "../data/" + dataset_name + "/det.txt";
-        std::ifstream label_file(label_path);
-        if (!label_file.is_open()) {
-            std::cerr << "Could not open or find the label!!!" << std::endl;
-            return -1;
-        }
-        std::vector<std::vector<cv::Rect>> all_detections = ProcessLabel(label_file);
-        // Close label file
-        label_file.close();
+//     std::vector<cv::Scalar> colors;
+//     if (enable_display_flag) {
+//         // Create a window to display original image
+//         cv::namedWindow("Original", cv::WINDOW_AUTOSIZE);
+//         // Create a window to display tracking result
+//         cv::namedWindow("Tracking", cv::WINDOW_AUTOSIZE);
 
-        // Load image paths for visualization
-        std::vector<cv::String> images;
-        if (enable_display_flag) {
-            // Load images
-            cv::String path("../mot_benchmark/train/" + dataset_name + "/img1/*.jpg");
-            // Non-recursive
-            cv::glob(path, images);
-        }
+//         // Generate random colors to visualize different bbox
+//         std::random_device rd;  //Will be used to obtain a seed for the random number engine
+//         std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+//         constexpr int max_random_value = 20;
+//         std::uniform_int_distribution<> dis(0, max_random_value);
+//         constexpr int factor = 255 / max_random_value;
 
-        // Create output folder if it does not exist
-        std::string output_folder = "../output/";
-        boost::filesystem::path output_folder_path(output_folder);
-        if(boost::filesystem::create_directory(output_folder_path)) {
-            std::cerr<< "Directory Created: "<< output_folder <<std::endl;
-        }
+//         for (int n = 0; n < kNumColors; ++n) {
+//             //Use dis to transform the random unsigned int generated by gen into an int in [0, 7]
+//             colors.emplace_back(cv::Scalar(dis(gen) * factor, dis(gen) * factor, dis(gen) * factor));
+//         }
+//     }
 
-        std::string output_path = output_folder + dataset_name + ".txt";
-        std::ofstream output_file(output_path);
+//     // All training dataset in MOT15
+//     std::vector<std::string> dataset_names{"ADL-Rundle-6", "ADL-Rundle-8", "ETH-Bahnhof",
+//                                            "ETH-Pedcross2", "ETH-Sunnyday", "KITTI-13",
+//                                            "KITTI-17", "PETS09-S2L1", "TUD-Campus",
+//                                            "TUD-Stadtmitte", "Venice-2"};
 
-//    std::string output_path_NIS = "../output/" + dataset_name + "-NIS.txt";
-//    std::ofstream output_file_NIS(output_path_NIS);
+//     // create SORT tracker
+//     Tracker tracker;
 
-        if (output_file.is_open()) {
-            std::cout << "Result will be exported to " << output_path << std::endl;
-        } else {
-            std::cerr << "Unable to open output file" << std::endl;
-            return -1;
-        }
+//     for (const auto& dataset_name : dataset_names) {
+//         // Open label file and load detections from MOT dataset
+//         // Note that it can also be replaced by detections from you own detector
+//         std::string label_path = "../data/" + dataset_name + "/det.txt";
+//         std::ifstream label_file(label_path);
+//         if (!label_file.is_open()) {
+//             std::cerr << "Could not open or find the label!!!" << std::endl;
+//             return -1;
+//         }
+//         std::vector<std::vector<cv::Rect>> all_detections = ProcessLabel(label_file);
+//         // Close label file
+//         label_file.close();
 
-        size_t total_frames = all_detections.size();
+//         // Load image paths for visualization
+//         std::vector<cv::String> images;
+//         if (enable_display_flag) {
+//             // Load images
+//             cv::String path("../mot_benchmark/train/" + dataset_name + "/img1/*.jpg");
+//             // Non-recursive
+//             cv::glob(path, images);
+//         }
 
-        auto t1 = std::chrono::high_resolution_clock::now();
-        for (size_t i = 0; i < total_frames; i++) {
-            auto frame_index = i + 1;
-            std::cout << "************* NEW FRAME ************* " << std::endl;
+//         // Create output folder if it does not exist
+//         std::string output_folder = "../output/";
+//         boost::filesystem::path output_folder_path(output_folder);
+//         if(boost::filesystem::create_directory(output_folder_path)) {
+//             std::cerr<< "Directory Created: "<< output_folder <<std::endl;
+//         }
 
-            /*** Run SORT tracker ***/
-            const auto &detections = all_detections[i];
-            tracker.Run(detections);
-            const auto tracks = tracker.GetTracks();
-            /*** Tracker update done ***/
+//         std::string output_path = output_folder + dataset_name + ".txt";
+//         std::ofstream output_file(output_path);
 
-            std::cout << "Raw detections:" << std::endl;
-            for (const auto &det : detections) {
-                std::cout << frame_index << "," << "-1" << "," << det.tl().x << "," << det.tl().y
-                          << "," << det.width << "," << det.height << std::endl;
-            }
-            std::cout << std::endl;
+// //    std::string output_path_NIS = "../output/" + dataset_name + "-NIS.txt";
+// //    std::ofstream output_file_NIS(output_path_NIS);
 
-            for (auto &trk : tracks) {
-                const auto &bbox = trk.second.GetStateAsBbox();
-                // Note that we will not export coasted tracks
-                // If we export coasted tracks, the total number of false negative will decrease (and maybe ID switch)
-                // However, the total number of false positive will increase more (from experiments),
-                // which leads to MOTA decrease
-                // Developer can export coasted cycles if false negative tracks is critical in the system
-                if (trk.second.coast_cycles_ < kMaxCoastCycles
-                && (trk.second.hit_streak_ >= kMinHits || frame_index < kMinHits)) {
-                    // Print to terminal for debugging
-                    std::cout << frame_index << "," << trk.first << "," << bbox.tl().x << "," << bbox.tl().y
-                              << "," << bbox.width << "," << bbox.height << ",1,-1,-1,-1"
-                              << " Hit Streak = " << trk.second.hit_streak_
-                              << " Coast Cycles = " << trk.second.coast_cycles_ << std::endl;
+//         if (output_file.is_open()) {
+//             std::cout << "Result will be exported to " << output_path << std::endl;
+//         } else {
+//             std::cerr << "Unable to open output file" << std::endl;
+//             return -1;
+//         }
 
-                    // Export to text file for metrics evaluation
-                    output_file << frame_index << "," << trk.first << "," << bbox.tl().x << "," << bbox.tl().y
-                                << "," << bbox.width << "," << bbox.height << ",1,-1,-1,-1\n";
+//         size_t total_frames = all_detections.size();
 
-//                output_file_NIS << trk.second.GetNIS() << "\n";
-                }
-            }
+//         auto t1 = std::chrono::high_resolution_clock::now();
+//         for (size_t i = 0; i < total_frames; i++) {
+//             auto frame_index = i + 1;
+//             std::cout << "************* NEW FRAME ************* " << std::endl;
 
-            // Visualize tracking result
-            if (enable_display_flag) {
-                // Read image file
-                cv::Mat img = cv::imread(images[i]);
-                // Make a copy for display
-                cv::Mat img_tracking = img.clone();
+//             /*** Run SORT tracker ***/
+//             const auto &detections = all_detections[i];
+//             tracker.Run(detections);
+//             const auto tracks = tracker.GetTracks();
+//             /*** Tracker update done ***/
 
-                // Check for invalid input
-                if (img.empty()) {
-                    std::cerr << "Could not open or find the image!!!" << std::endl;
-                    return -1;
-                }
+//             std::cout << "Raw detections:" << std::endl;
+//             for (const auto &det : detections) {
+//                 std::cout << frame_index << "," << "-1" << "," << det.tl().x << "," << det.tl().y
+//                           << "," << det.width << "," << det.height << std::endl;
+//             }
+//             std::cout << std::endl;
 
-                for (const auto &det : detections) {
-                    // Draw detections in red bounding box
-                    cv::rectangle(img, det, cv::Scalar(0, 0, 255), 3);
-                }
+//             for (auto &trk : tracks) {
+//                 const auto &bbox = trk.second.GetStateAsBbox();
+//                 // Note that we will not export coasted tracks
+//                 // If we export coasted tracks, the total number of false negative will decrease (and maybe ID switch)
+//                 // However, the total number of false positive will increase more (from experiments),
+//                 // which leads to MOTA decrease
+//                 // Developer can export coasted cycles if false negative tracks is critical in the system
+//                 if (trk.second.coast_cycles_ < kMaxCoastCycles
+//                 && (trk.second.hit_streak_ >= kMinHits || frame_index < kMinHits)) {
+//                     // Print to terminal for debugging
+//                     std::cout << frame_index << "," << trk.first << "," << bbox.tl().x << "," << bbox.tl().y
+//                               << "," << bbox.width << "," << bbox.height << ",1,-1,-1,-1"
+//                               << " Hit Streak = " << trk.second.hit_streak_
+//                               << " Coast Cycles = " << trk.second.coast_cycles_ << std::endl;
 
-                for (auto &trk : tracks) {
-                    // only draw tracks which meet certain criteria
-                    if (trk.second.coast_cycles_ < kMaxCoastCycles &&
-                        (trk.second.hit_streak_ >= kMinHits || frame_index < kMinHits)) {
-                        const auto &bbox = trk.second.GetStateAsBbox();
-                        cv::putText(img_tracking, std::to_string(trk.first), cv::Point(bbox.tl().x, bbox.tl().y - 10),
-                                    cv::FONT_HERSHEY_DUPLEX, 2, cv::Scalar(255, 255, 255), 2);
-                        cv::rectangle(img_tracking, bbox, colors[trk.first % kNumColors], 3);
-                    }
-                }
+//                     // Export to text file for metrics evaluation
+//                     output_file << frame_index << "," << trk.first << "," << bbox.tl().x << "," << bbox.tl().y
+//                                 << "," << bbox.width << "," << bbox.height << ",1,-1,-1,-1\n";
 
-                // Show detection and tracking result
-                cv::imshow("Original", img);
-                cv::imshow("Tracking", img_tracking);
+// //                output_file_NIS << trk.second.GetNIS() << "\n";
+//                 }
+//             }
 
-                // Delay in ms
-                auto key = cv::waitKey(33);
+//             // Visualize tracking result
+//             if (enable_display_flag) {
+//                 // Read image file
+//                 cv::Mat img = cv::imread(images[i]);
+//                 // Make a copy for display
+//                 cv::Mat img_tracking = img.clone();
 
-                // Exit if ESC pressed
-                if (27 == key) {
-                    return 0;
-                } else if (32 == key) {
-                    // Press Space to pause and press it again to resume
-                    while (true) {
-                        key = cv::waitKey(0);
-                        if (32 == key) {
-                            break;
-                        } else if (27 == key) {
-                            return 0;
-                        }
-                    }
-                }
-            } // end of enable_display_flag
-        } // end of iterating all frames
+//                 // Check for invalid input
+//                 if (img.empty()) {
+//                     std::cerr << "Could not open or find the image!!!" << std::endl;
+//                     return -1;
+//                 }
 
-        auto t2 = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+//                 for (const auto &det : detections) {
+//                     // Draw detections in red bounding box
+//                     cv::rectangle(img, det, cv::Scalar(0, 0, 255), 3);
+//                 }
 
-        std::cout << "********************************" << std::endl;
-        std::cout << "Total tracking took: " << time_span.count() << " for " << total_frames << " frames" << std::endl;
-        std::cout << "FPS = " << total_frames / time_span.count() << std::endl;
-        if (enable_display_flag) {
-            std::cout << "Note: to get real runtime results run without the option: --display" << std::endl;
-        }
-        std::cout << "********************************" << std::endl;
+//                 for (auto &trk : tracks) {
+//                     // only draw tracks which meet certain criteria
+//                     if (trk.second.coast_cycles_ < kMaxCoastCycles &&
+//                         (trk.second.hit_streak_ >= kMinHits || frame_index < kMinHits)) {
+//                         const auto &bbox = trk.second.GetStateAsBbox();
+//                         cv::putText(img_tracking, std::to_string(trk.first), cv::Point(bbox.tl().x, bbox.tl().y - 10),
+//                                     cv::FONT_HERSHEY_DUPLEX, 2, cv::Scalar(255, 255, 255), 2);
+//                         cv::rectangle(img_tracking, bbox, colors[trk.first % kNumColors], 3);
+//                     }
+//                 }
 
-        output_file.close();
-    } // end of iterating all dataset
-    return 0;
-}
+//                 // Show detection and tracking result
+//                 cv::imshow("Original", img);
+//                 cv::imshow("Tracking", img_tracking);
+
+//                 // Delay in ms
+//                 auto key = cv::waitKey(33);
+
+//                 // Exit if ESC pressed
+//                 if (27 == key) {
+//                     return 0;
+//                 } else if (32 == key) {
+//                     // Press Space to pause and press it again to resume
+//                     while (true) {
+//                         key = cv::waitKey(0);
+//                         if (32 == key) {
+//                             break;
+//                         } else if (27 == key) {
+//                             return 0;
+//                         }
+//                     }
+//                 }
+//             } // end of enable_display_flag
+//         } // end of iterating all frames
+
+//         auto t2 = std::chrono::high_resolution_clock::now();
+//         std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+
+//         std::cout << "********************************" << std::endl;
+//         std::cout << "Total tracking took: " << time_span.count() << " for " << total_frames << " frames" << std::endl;
+//         std::cout << "FPS = " << total_frames / time_span.count() << std::endl;
+//         if (enable_display_flag) {
+//             std::cout << "Note: to get real runtime results run without the option: --display" << std::endl;
+//         }
+//         std::cout << "********************************" << std::endl;
+
+//         output_file.close();
+//     } // end of iterating all dataset
+//     return 0;
+// }

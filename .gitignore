@@ -5,3 +5,4 @@ cmake-*/
 mot_benchmark/
 output/
 bin/
+venv/
