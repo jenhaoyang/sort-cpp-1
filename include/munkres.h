@@ -17,7 +17,8 @@
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  */
 
-#if !defined(_MUNKRES_H_)
+
+#ifndef _MUNKRES_H_
 #define _MUNKRES_H_
 
 #include "matrix.h"
@@ -27,7 +28,7 @@
 #include <iostream>
 #include <cmath>
 #include <limits>
-
+#include <cassert>
 template<typename Data> class Munkres
 {
     static constexpr int NORMAL = 0;
@@ -461,4 +462,4 @@ private:
 };
 
 
-#endif /* !defined(_MUNKRES_H_) */
+#endif /* ifndef _MUNKRES_H_ */

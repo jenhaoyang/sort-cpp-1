@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _KALMANFILTER_H_
+#define _KALMANFILTER_H_
 
 #include <iostream>
 #include <eigen3/Eigen/Dense>
@@ -72,3 +73,4 @@ public:
 
     float NIS_;
 };
+#endif /* ifndef _KALMANFILTER_H_ */

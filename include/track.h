@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _TRACK_H_
+#define _TRACK_H_
 
 #include <opencv2/core.hpp>
 #include "kalman_filter.h"
@@ -25,3 +26,4 @@ private:
 
     KalmanFilter kf_;
 };
+#endif /* ifndef _TRACK_H_ */

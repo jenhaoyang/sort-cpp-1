@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _TRACKER_H_
+#define _TRACKER_H_
 
 #include <map>
 #include <opencv2/core.hpp>
@@ -44,3 +45,4 @@ private:
     // Assigned ID for each bounding box
     int id_;
 };
+#endif /* ifndef _TRACKER_H_ */

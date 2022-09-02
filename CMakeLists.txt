@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.16.1)
-project(sort-cpp)
+project(sortcpp)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+# python -m pybind11 --cmakedir 可以印出pybind11位置
+# https://pybind11.readthedocs.io/en/stable/changelog.html?highlight=cmakedir
+set(pybind11_DIR ${PROJECT_SOURCE_DIR}/venv/lib/python3.8/site-packages/pybind11/share/cmake/pybind11)
 
 # Try to find OpenCV
 find_package(OpenCV REQUIRED)
@@ -36,7 +38,25 @@ else ()
     message(FATAL_ERROR "Could not locate Python3")
 endif()
 
-include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/pybind11/include)
+# Try to find Eigen headers
+find_package(Eigen3 REQUIRED)
+if(Eigen3_FOUND)
+    include( ${EIGEN3_USE_FILE} )
+    message(STATUS "Eigen3 library status:")
+    message(STATUS "    version: ${Eigen3_VERSION}")
+    message(STATUS "    include path: ${Eigen3_INCLUDE_DIRS}")
+else ()
+    message(FATAL_ERROR "Could not locate Eigen3")
+endif()
+
+# include 我們自己的資料夾
+include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/python)
+
+file (GLOB SOURCE_FILES ${PROJECT_SOURCE_DIR}/include/*.cpp)
+file (GLOB HEADER_FILES ${PROJECT_SOURCE_DIR}/src/*.hpp)
+file (GLOB PYTHON_FILES ${PROJECT_SOURCE_DIR}/python/*.cpp ${PROJECT_SOURCE_DIR}/python/*.hpp)
+
 
 # print include dir
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
@@ -44,25 +64,30 @@ foreach(dir ${dirs})
   message(STATUS "dir='${dir}'")
 endforeach()
 
-file(GLOB SOURCE_FILES src/*.cpp)
+# Set up such that XCode organizes the files
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCE_FILES} ${HEADER_FILES} ${PYTHON_FILES} )
 
-if(SKBUILD)
-  # Scikit-Build does not add your site-packages to the search path
-  # automatically, so we need to add it _or_ the pybind11 specific directory
-  # here.
-  execute_process(
-    COMMAND "${PYTHON_EXECUTABLE}" -c
-            "import pybind11; print(pybind11.get_cmake_dir())"
-    OUTPUT_VARIABLE _tmp_dir
-    OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ECHO STDOUT)
-  list(APPEND CMAKE_PREFIX_PATH "${_tmp_dir}")
-endif()
+find_package(pybind11 REQUIRED)
 
-# Now we can find pybind11
-find_package(pybind11 CONFIG REQUIRED)
+message(STATUS "    SOURCE_FILES: ${SOURCE_FILES}")
+message(STATUS "    HEADER_FILES: ${HEADER_FILES}")
+message(STATUS "    PYTHON_FILES: ${PYTHON_FILES}")
+pybind11_add_module(sortcpp 
+	"/home/ai_server/2005013/ai_surve/sort-cpp-1/python/sort_cpp.cpp"
+    "/home/ai_server/2005013/ai_surve/sort-cpp-1/src/kalman_filter.cpp"
+    "/home/ai_server/2005013/ai_surve/sort-cpp-1/src/main.cpp"
+    "/home/ai_server/2005013/ai_surve/sort-cpp-1/src/munkres.cpp"
+    "/home/ai_server/2005013/ai_surve/sort-cpp-1/src/track.cpp"
+    "/home/ai_server/2005013/ai_surve/sort-cpp-1/src/tracker.cpp"
+    "/home/ai_server/2005013/ai_surve/sort-cpp-1/include/matrix.cpp"
+)
 
-pybind11_add_module(_core MODULE src/tracker.cpp) # _core出現在__init__.py
 
-target_compile_definitions(_core PRIVATE VERSION_INFO=${PROJECT_VERSION})
+target_link_libraries(sortcpp PUBLIC)
 
-install(TARGETS _core DESTINATION .)
+install(TARGETS sortcpp
+  COMPONENT python
+  LIBRARY DESTINATION "/home/ai_server/2005013/ai_surve/sort-cpp-1/venv/lib/python3.8/site-packages"
+)
+
+
