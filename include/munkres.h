@@ -27,6 +27,7 @@
 #include <iostream>
 #include <cmath>
 #include <limits>
+#include <cassert>
 
 template<typename Data> class Munkres
 {

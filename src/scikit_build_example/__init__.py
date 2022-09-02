@@ -1,1 +1,1 @@
-from ._core import __doc__, __version__, add, subtract, Pet
+from ._core import __doc__, __version__, add, subtract, Tracker

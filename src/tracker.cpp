@@ -182,6 +182,10 @@ std::map<int, Track> Tracker::GetTracks() {
 
 
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <pybind11/complex.h>
+#include <pybind11/functional.h>
+#include <pybind11/chrono.h>
 
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
@@ -221,8 +225,9 @@ PYBIND11_MODULE(_core, m) {
         Some other explanation about the subtract function.
     )pbdoc");
 
-    py::class_<Pet>(m, "Pet")
-        .def(py::init<const std::string &>());
+    py::class_<Tracker>(m, "Tracker")
+        .def(py::init<>())
+        .def("GetTracks", &Tracker::GetTracks);
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
