@@ -2,10 +2,13 @@
 
 #include <map>
 #include <opencv2/core.hpp>
+#include <pybind11/numpy.h>
 
 #include "track.h"
 #include "munkres.h"
 #include "utils.h"
+
+namespace py = pybind11;
 
 class Tracker {
 public:
@@ -33,7 +36,7 @@ public:
                                        std::vector<cv::Rect>& unmatched_det,
                                        float iou_threshold = 0.3);
 
-    void Run(const std::vector<cv::Rect>& detections);
+    void Run(std::vector<py::array_t<int>> detections_tmp) ;
 
     std::map<int, Track> GetTracks();
 

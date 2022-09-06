@@ -14,7 +14,7 @@ from setuptools import find_packages
 
 setup(
     name="scikit_build_example",
-    version="0.0.1",
+    version="0.0.2",
     description="a minimal example package (with pybind11)",
     author="Henry Schreiner",
     license="MIT",

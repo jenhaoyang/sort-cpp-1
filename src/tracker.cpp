@@ -133,9 +133,17 @@ void Tracker::AssociateDetectionsToTrackers(const std::vector<cv::Rect>& detecti
     }
 }
 
-
-void Tracker::Run(const std::vector<cv::Rect>& detections) {
-
+// https://www.linyuanshi.me/post/pybind11-array/
+// https://github.com/MrGolden1/sort-python/blob/main/sort/src/Py_SORT.cpp
+void Tracker::Run(std::vector<py::array_t<int>> detections_vector) {
+    
+    std::vector<cv::Rect> detections;
+    
+    for(auto & detection : detections_vector){
+        py::buffer_info detection_buf = detection.request();
+        int* detection_ptr = (int*)detection_buf.ptr;
+        detections.push_back(cv::Rect(detection_ptr[0], detection_ptr[1], detection_ptr[2], detection_ptr[3]));
+    }
     /*** Predict internal tracks from previous frame ***/
     for (auto &track : tracks_) {
         track.second.Predict();
@@ -227,7 +235,8 @@ PYBIND11_MODULE(_core, m) {
 
     py::class_<Tracker>(m, "Tracker")
         .def(py::init<>())
-        .def("GetTracks", &Tracker::GetTracks);
+        .def("GetTracks", &Tracker::GetTracks)
+        .def("Run", &Tracker::Run);
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);

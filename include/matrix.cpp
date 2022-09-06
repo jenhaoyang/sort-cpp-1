@@ -15,6 +15,10 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  */
+#ifndef _MATRIX_CPP_
+#define _MATRIX_CPP_
+// template class 需要看到實作
+// 為了避免重複定義，所以用ifndef包起來
 
 #include "matrix.h"
 
@@ -235,3 +239,5 @@ Matrix<T>::max() const {
 
   return max;
 }
+
+#endif /* !defined(_MATRIX_CPP_) */
