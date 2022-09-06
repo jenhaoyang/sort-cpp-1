@@ -97,6 +97,22 @@ cv::Rect Track::GetStateAsBbox() const {
 }
 
 
+py::array_t<int> Track::GetStateAsBboxArray() const {
+    cv::Rect bbx = ConvertStateToBbox(kf_.x_);
+
+    // allocate py::array (to pass the result of the C++ function to Python)
+    auto result        = py::array_t<int>(4); // 指定array大小
+    auto result_buffer = result.request();
+    int *result_ptr    = (int *) result_buffer.ptr;
+
+    // copy cv::Rect -> py::array
+    result_ptr[0] = bbx.x;
+    result_ptr[1] = bbx.y;
+    result_ptr[2] = bbx.width;
+    result_ptr[3] = bbx.height;
+    return result;
+}
+
 float Track::GetNIS() const {
     return kf_.NIS_;
 }

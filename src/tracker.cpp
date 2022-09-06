@@ -233,6 +233,10 @@ PYBIND11_MODULE(_core, m) {
         Some other explanation about the subtract function.
     )pbdoc");
 
+    py::class_<Track>(m, "Track")
+        .def(py::init<>())
+        .def("GetStateAsBboxArray", &Track::GetStateAsBboxArray);
+
     py::class_<Tracker>(m, "Tracker")
         .def(py::init<>())
         .def("GetTracks", &Tracker::GetTracks)
