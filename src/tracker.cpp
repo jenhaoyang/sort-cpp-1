@@ -235,6 +235,8 @@ PYBIND11_MODULE(_core, m) {
 
     py::class_<Track>(m, "Track")
         .def(py::init<>())
+        .def_readwrite("hit_streak_", &Track::hit_streak_)
+        .def_readwrite("coast_cycles_", &Track::coast_cycles_)
         .def("GetStateAsBboxArray", &Track::GetStateAsBboxArray);
 
     py::class_<Tracker>(m, "Tracker")
