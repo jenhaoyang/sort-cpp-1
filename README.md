@@ -1,5 +1,5 @@
 ## Introduction
-C++ implementation and Python binding of SORT: Simple, online, and real-time tracking of multiple objects in a video sequence.
+Python binding for C++ implementation of SORT: Simple, online, and real-time tracking of multiple objects in a video sequence.
 
 Kuhn-Munkres (Hungarian) Algorithm in C++ is forked from:
 https://github.com/saebyn/munkres-cpp
