@@ -38,7 +38,7 @@ if __name__ == "__main__":
                     "KITTI-17", "PETS09-S2L1", "TUD-Campus",
                     "TUD-Stadtmitte", "Venice-2"]
 
-    tracker = scikit_build_example.Tracker()
+    #tracker = scikit_build_example.Tracker()
 
     for dataset_name in dataset_names:
         tracker = scikit_build_example.Tracker()
