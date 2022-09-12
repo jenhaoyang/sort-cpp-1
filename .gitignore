@@ -234,3 +234,6 @@ mot_benchmark/
 output/
 bin/
 .vscode
+data/
+TrackEval-master
+data.zip
