@@ -76,15 +76,16 @@ void Tracker::HungarianMatching(const std::vector<std::vector<float>>& iou_matri
 }
 
 
-void Tracker::AssociateDetectionsToTrackers(const std::vector<cv::Rect>& detection,
+void Tracker::AssociateDetectionsToTrackers(const std::vector<cv::Vec6i>& detail_bbxs,
                                             std::map<int, Track>& tracks,
                                             std::map<int, cv::Rect>& matched,
-                                            std::vector<cv::Rect>& unmatched_det,
+                                            std::vector<cv::Vec6i>& unmatched_det,
                                             float iou_threshold) {
+    std::vector <cv::Rect> detection = convert_rect(detail_bbxs);
 
     // Set all detection as unmatched if no tracks existing
     if (tracks.empty()) {
-        for (const auto& det : detection) {
+        for (const auto& det : detail_bbxs) {
             unmatched_det.push_back(det);
         }
         return;
@@ -92,15 +93,15 @@ void Tracker::AssociateDetectionsToTrackers(const std::vector<cv::Rect>& detecti
 
     std::vector<std::vector<float>> iou_matrix;
     // resize IOU matrix based on number of detection and tracks
-    iou_matrix.resize(detection.size(), std::vector<float>(tracks.size()));
+    iou_matrix.resize(detail_bbxs.size(), std::vector<float>(tracks.size()));
 
     std::vector<std::vector<float>> association;
     // resize association matrix based on number of detection and tracks
-    association.resize(detection.size(), std::vector<float>(tracks.size()));
+    association.resize(detail_bbxs.size(), std::vector<float>(tracks.size()));
 
 
     // row - detection, column - tracks
-    for (size_t i = 0; i < detection.size(); i++) {
+    for (size_t i = 0; i < detail_bbxs.size(); i++) {
         size_t j = 0;
         for (const auto& trk : tracks) {
             iou_matrix[i][j] = CalculateIou(detection[i], trk.second);
@@ -109,9 +110,9 @@ void Tracker::AssociateDetectionsToTrackers(const std::vector<cv::Rect>& detecti
     }
 
     // Find association
-    HungarianMatching(iou_matrix, detection.size(), tracks.size(), association);
+    HungarianMatching(iou_matrix, detail_bbxs.size(), tracks.size(), association);
 
-    for (size_t i = 0; i < detection.size(); i++) {
+    for (size_t i = 0; i < detail_bbxs.size(); i++) {
         bool matched_flag = false;
         size_t j = 0;
         for (const auto& trk : tracks) {
@@ -128,7 +129,7 @@ void Tracker::AssociateDetectionsToTrackers(const std::vector<cv::Rect>& detecti
         }
         // if detection cannot match with any tracks
         if (!matched_flag) {
-            unmatched_det.push_back(detection[i]);
+            unmatched_det.push_back(detail_bbxs[i]);
         }
     }
 }
@@ -136,13 +137,14 @@ void Tracker::AssociateDetectionsToTrackers(const std::vector<cv::Rect>& detecti
 // https://www.linyuanshi.me/post/pybind11-array/
 // https://github.com/MrGolden1/sort-python/blob/main/sort/src/Py_SORT.cpp
 void Tracker::Run(std::vector<py::array_t<int>> detections_vector) {
-    
+    std::vector<cv::Vec6i> detail_bbxs;
     std::vector<cv::Rect> detections;
     
     for(auto & detection : detections_vector){
         py::buffer_info detection_buf = detection.request();
         int* detection_ptr = (int*)detection_buf.ptr;
         detections.push_back(cv::Rect(detection_ptr[0], detection_ptr[1], detection_ptr[2], detection_ptr[3]));
+        detail_bbxs.push_back(cv::Vec6i(detection_ptr[0], detection_ptr[1], detection_ptr[2], detection_ptr[3], detection_ptr[4], detection_ptr[5]));
     }
     /*** Predict internal tracks from previous frame ***/
     for (auto &track : tracks_) {
@@ -152,11 +154,11 @@ void Tracker::Run(std::vector<py::array_t<int>> detections_vector) {
     // Hash-map between track ID and associated detection bounding box
     std::map<int, cv::Rect> matched;
     // vector of unassociated detections
-    std::vector<cv::Rect> unmatched_det;
+    std::vector<cv::Vec6i> unmatched_det;
 
     // return values - matched, unmatched_det
-    if (!detections.empty()) {
-        AssociateDetectionsToTrackers(detections, tracks_, matched, unmatched_det);
+    if (!detail_bbxs.empty()) {
+        AssociateDetectionsToTrackers(detail_bbxs, tracks_, matched, unmatched_det);
     }
 
     /*** Update tracks with associated bbox ***/
@@ -188,6 +190,18 @@ std::map<int, Track> Tracker::GetTracks() {
     return tracks_;
 }
 
+std::vector<cv::Rect> convert_rect(const std::vector<cv::Vec6i>& detail_detections) {
+    int n = 4;
+    std::vector <cv::Rect> detection;
+    detection.reserve(n);
+
+    for (auto it = detail_detections.begin(); it != detail_detections.end(); ++it) {
+        detection.push_back(cv::Rect((*it)[0], (*it)[1], (*it)[2], (*it)[3]));
+        //std::cout << "a";
+    }
+
+    return detection;
+}
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -237,6 +251,8 @@ PYBIND11_MODULE(_core, m) {
         .def(py::init<>())
         .def_readwrite("hit_streak_", &Track::hit_streak_)
         .def_readwrite("coast_cycles_", &Track::coast_cycles_)
+        .def_readwrite("confidence", &Track::confidence)
+        .def_readwrite("obj_type", &Track::obj_type)
         .def("GetStateAsBboxArray", &Track::GetStateAsBboxArray);
 
     py::class_<Tracker>(m, "Tracker")
