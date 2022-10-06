@@ -237,3 +237,6 @@ bin/
 data/
 TrackEval-master
 data.zip
+MANIFEST.in
+_skbuild/
+cppsort.egg-info/
