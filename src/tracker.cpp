@@ -216,7 +216,7 @@ PYBIND11_MODULE(_core, m) {
     m.doc() = R"pbdoc(
         Pybind11 example plugin
         -----------------------
-        .. currentmodule:: scikit_build_example
+        .. currentmodule:: cppsort
         .. autosummary::
            :toctree: _generate
            add

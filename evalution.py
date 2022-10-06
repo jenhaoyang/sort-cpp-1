@@ -30,7 +30,7 @@ def ProcessLabel(label_file):
     return bbx
 
 if __name__ == "__main__":
-    import scikit_build_example
+    import cppsort
     from pathlib import Path
     import time
     dataset_names = ["ADL-Rundle-6", "ADL-Rundle-8", "ETH-Bahnhof",
@@ -38,10 +38,10 @@ if __name__ == "__main__":
                     "KITTI-17", "PETS09-S2L1", "TUD-Campus",
                     "TUD-Stadtmitte", "Venice-2"]
 
-    tracker = scikit_build_example.Tracker()
+    #tracker = cppsort.Tracker()
 
     for dataset_name in dataset_names:
-        tracker = scikit_build_example.Tracker()
+        tracker = cppsort.Tracker()
         # Open label file and load detections from MOT dataset
         # Note that it can also be replaced by detections from you own detector
         label_path = f"data/{dataset_name}/det.txt"
