@@ -15,8 +15,22 @@ if (OpenCV_FOUND)
     message(STATUS "    version: ${OpenCV_VERSION}")
     message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
     include_directories(${OpenCV_INCLUDE_DIRS})
+    link_libraries(${OpenCV_LIBRARIES})
 else ()
     message(FATAL_ERROR "Could not locate OpenCV")
+endif()
+
+# Try to find Eigen headers
+find_package(Eigen3 REQUIRED)
+if(Eigen3_FOUND)
+    get_target_property(EIGEN3_INCLUDE_DIR Eigen3::Eigen INTERFACE_INCLUDE_DIRECTORIES)
+    #include( ${EIGEN3_USE_FILE} ) #This line not work on windows
+    include_directories( ${EIGEN3_INCLUDE_DIR})
+    message(STATUS "Eigen3 library status:")
+    message(STATUS "    version: ${Eigen3_VERSION}")
+    message(STATUS "    include path: ${EIGEN3_INCLUDE_DIR}")
+else ()
+    message(FATAL_ERROR "Could not locate Eigen3")
 endif()
 
 # Try to find Boost
