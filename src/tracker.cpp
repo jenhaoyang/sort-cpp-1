@@ -245,7 +245,7 @@ PYBIND11_MODULE(_core, m) {
         .def("Run", &Tracker::Run);
 
 #ifdef VERSION_INFO
-    m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
+    // m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
 #else
     m.attr("__version__") = "dev";
 #endif
