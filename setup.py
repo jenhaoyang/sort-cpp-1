@@ -24,5 +24,5 @@ setup(
     include_package_data=True,
     extras_require={"test": ["pytest"]},
     python_requires=">=3.8",
-    cmake_args=['-G=Visual Studio 16 2019'] # cmake generator  https://cmake.org/cmake/help/v3.6/manual/cmake.1.html#options
+    #cmake_args=['-G=Visual Studio 16 2019'] # cmake generator  https://cmake.org/cmake/help/v3.6/manual/cmake.1.html#options
 )
